@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <sstream>
-#define MAX_BUFFER 1025 //?
+#define HOST_BUFFER 1025 //?
 using namespace std;
 
 
@@ -26,7 +26,7 @@ int main(int argc, char * argv[])
 	
 
 	struct sockaddr_in socketInfo;
-	char host[MAX_BUFFER + 1]; // hostname of this computuer
+	char host[HOST_BUFFER + 1]; // hostname of this computuer
 	struct hostent *hPtr;
 
 	int socketHandle;
@@ -35,7 +35,7 @@ int main(int argc, char * argv[])
 	bzero(&socketInfo, sizeof(sockaddr_in));
 
 	//get system info
-	gethostname(host, MAX_BUFFER); // name of this computer
+	gethostname(host, HOST_BUFFER); // name of this computer
 	if ((hPtr = gethostbyname(host)) == NULL) {
 		cerr << "System hostname misconfigured." << endl;
 		exit(EXIT_FAILURE);
@@ -64,48 +64,89 @@ int main(int argc, char * argv[])
 		exit(EXIT_FAILURE);
 	}
 
+	cout << "listening..." << endl;
+
 	// listening mode
 	listen(socketHandle, 5);
 
-	int socketConnection;
-	if ((socketConnection = accept(socketHandle, NULL, NULL)) < 0) {
-		exit(EXIT_FAILURE);
-	}
-	close(socketHandle);
 
 	int rc = 0; // actual number of bytes read
-	char buf[512];
+	char buf[256];
+	memset(&socketInfo, '0', sizeof(socketInfo));
+    memset(buf, '0', sizeof(buf));
 
 	// rc: # of char returned
 	// note this is not typical
-	rc = recv(socketConnection, buf, 512, 0);
-	buf[rc] = (char) NULL; // null termination
+	
+	//rc = recv(socketConnection, buf, 512, 0);
+	//buf[rc] = (char) NULL; // null termination
 
-	cout << "Number of bytes read: " << rc << endl;
-	cout << "Received: " << buf << endl;
+	//cout << "Number of bytes read: " << rc << endl;
+	//cout << "Received: " << buf << endl;
 
-	bzero(buf, 512);
+	
+	cout << "ok" << endl;
+	// works fine up to here
 
-	   // create a file
-
-    FILE * f;
-    f = fopen("test5354.txt", "abc");
-    if (f == NULL) {
-      printf("ERROR: file %s not found\n", "test.txt");
-      exit(EXIT_FAILURE);
-    }
-
-
-    int file_size;
-    while ((file_size = fread(buf, sizeof(char), 512, f)) > 0) {
-    	if (send(socketHandle, buf, file_size, 0) < 0) {
-    		cerr << "ERROR: file cannot be sent" << endl;
-    		break;
+	
+    int connfd; //?
+    int done = 0;
+    while (true) {
+    	connfd = accept(socketHandle, (struct sockaddr *) NULL, NULL);
+    	FILE * f = fopen("test1.txt", "r"); //
+    	if (f == NULL) {
+    		cout << "file open error" << endl;
+    		exit(1);
     	}
-    	bzero(buf, 512);
+
+    	cout << "ok" << endl;
+
+    	while (true) {
+    		unsigned char buffer[256] = {0};
+    		int nread = fread(buffer, 1, 256, f);
+    		cout << "Bytes read: " << nread << endl;
+
+    		//send data
+    		if (nread > 0) {
+    			cout << "sending..." << endl;
+    			write(connfd, buffer, nread);
+    		}
+    		// if error, or reached end of file
+    		if (nread < 256) {
+    			if (feof(f))
+    				cout << "end of file" << endl;
+    			if (ferror(f))
+    				cout << "error reading" << endl;
+    			done = 1;
+    			break;
+    		}
+
+    	}
+    	if (done)
+    		break;
+
+    	close (connfd);
+    	sleep(1);
     }
-    printf("File sent to the client!\n");
+    
+    /*
+    FILE *f;
+	f = fopen("add.txt","r");
+	if (f == NULL) {
+    	cout << "file open error" << endl; //error
+    	exit(1);
+    }
+
+
+	fscanf(f,"%s",buf); //segmentation error
+	write(socketHandle, buf, 256);
+
+	cout << "the file was sent successfully" << endl;
+    bzero(buf, 256);
+
+    
     close(socketHandle);
+    */
    
     return 0;
 }
