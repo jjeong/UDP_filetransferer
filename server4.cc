@@ -7,29 +7,31 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <sstream>
-#define HOST_BUFFER 1025 //?
-#define BUFFER_SIZE 40
+#include <time.h>
+#define HOST_BUFFER 256
+#define BUFFER_SIZE 256
 using namespace std;
-
 
 
 int main(int argc, char * argv[])
 {
+
+	//check parameter
 	if (argc < 1) {
 		cerr << "Port number missing in the argument" << endl;
 		exit(0);
 	}
-
 	int portNumber;
 	istringstream ss(argv[1]);
 	if (! (ss >> portNumber))
 		cerr << "Invalid port number" << argv[1] << "\n";
 	
+	//initialize random generator
+	srand(time(NULL));
 
 	struct sockaddr_in socketInfo;
 	char host[HOST_BUFFER + 1]; // hostname of this computuer
 	struct hostent *hPtr;
-
 	int socketHandle;
 
 	// clear struct memory
@@ -71,36 +73,29 @@ int main(int argc, char * argv[])
 	listen(socketHandle, 5);
 
 
-	int rc = 0; // actual number of bytes read
+	int rc = 0; // number of bytes read
 	char buf[BUFFER_SIZE];
 	memset(&socketInfo, '0', sizeof(socketInfo));
     memset(buf, '0', sizeof(buf));
 
-	// rc: # of char returned
-	// note this is not typical
-	
-	//rc = recv(socketConnection, buf, 512, 0);
-	//buf[rc] = (char) NULL; // null termination
-
-	//cout << "Number of bytes read: " << rc << endl;
-	//cout << "Received: " << buf << endl;
-
-	
-	cout << "ok" << endl;
-	// works fine up to here
-
 	
     int connfd; //?
     int done = 0;
-    //while (true) {
     char filename[10];
-    char numstr[2];
+    strcpy(filename, "test1"); //10MB
+	strcat(filename, ".txt");
 
-    for (int i = 1; i <= 10; i++) {
-    	strcpy(filename, "test");
-    	sprintf(numstr,"%d",i);
-    	strcat(filename, numstr);
-    	strcat(filename, ".txt");
+	int randtime;
+	int totaltime = 0;
+	int blocksent = 0; // counter for data block
+
+
+    //for (int i = 1; i <= 10; i++) {
+    while (true) {
+    	// strcpy(filename, "test");
+    	// sprintf(numstr,"%d",i);
+    	// strcat(filename, numstr);
+    	// strcat(filename, ".txt");
 
     	connfd = accept(socketHandle, (struct sockaddr *) NULL, NULL);
     	FILE * f = fopen(filename, "r");
@@ -125,20 +120,34 @@ int main(int argc, char * argv[])
     			//}
     			
     		}
+
+    		blocksent += 1;
+
     		// if error, or reached end of file
     		if (nread < BUFFER_SIZE) {
     			if (feof(f))
     				cout << "end of file" << endl;
     			if (ferror(f))
     				cout << "error reading" << endl;
-    			//done = 1;
+    			done = 1;
     			break;
     		}
+    		if (done)
+    			break;
+
+    		// create random delay
+    		randtime = rand() % 10; // 0~9
+    		cout << "delaying " << randtime << " seconds" << endl;
+    		sleep(randtime);
+    		cout << "done! moving on " << endl;
+    		totaltime += randtime;
+
+
 
     	}
 
     	close (connfd);
-    	sleep(1);
+    	//sleep(1);
     }
     
     /*

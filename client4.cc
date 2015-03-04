@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <sstream>
 #define HOST_BUFFER 256
+#define BUFFER_SIZE 256
 using namespace std;
 
 
@@ -19,11 +20,11 @@ int main(int argc, char * argv[]) // <addr> <port#> [-b]
    }
 
    int portNumber;
-   //struct sockaddr_in socketInfo;
    char host[HOST_BUFFER + 1]; // hostname of this computuer
    memset(host, '0', sizeof(host));
    struct hostent *hPtr;
    struct sockaddr_in remoteSocketInfo;
+   int blink = 0;
 
 
    istringstream ss(argv[1]);
@@ -36,6 +37,8 @@ int main(int argc, char * argv[]) // <addr> <port#> [-b]
       cerr << "Invalid port number: " << argv[2] << "\n";
       exit(EXIT_FAILURE);
    }
+   if ((argc == 4) && (argv[3] == "-b"))
+      blink = 1;
 
    //struct hostent *hPtr;
    int socketHandle;
@@ -53,17 +56,13 @@ int main(int argc, char * argv[]) // <addr> <port#> [-b]
       exit(EXIT_FAILURE);
    }
 
-   cout << ":)" << endl;
-
    // create socket
    if((socketHandle = socket(AF_INET, SOCK_STREAM, 0)) < 0)
    {
-      cout << "socket failed :(" << endl;
+      cout << "socket failed" << endl;
       close(socketHandle);
       exit(EXIT_FAILURE);
    }
-
-   cout << ":)" << endl;
 
    // Load system information into socket data structures
 
@@ -82,19 +81,32 @@ int main(int argc, char * argv[]) // <addr> <port#> [-b]
 
 
    int rc = 0;  // Actual number of bytes read by function read()
-   char buf[256];
+   char buf[BUFFER_SIZE];
 
    FILE * fp = fopen("received.txt", "w");
    if (fp == NULL) {
       cout << "File not received" << endl;
-      exit(1);
+      exit(EXIT_FAILURE);
    }
 
    // receive file
    int bytesReceived;
+   time_t start, end;
+   double diff;
 
-   while ((bytesReceived = read(socketHandle, buf, 256) > 0)) {
+   time(&start);
+   while ((bytesReceived = recv(socketHandle, buf, BUFFER_SIZE, 0))) {
+      
       fwrite(buf, 1, bytesReceived, fp);
+      time(&end);
+      diff = difftime(end,start);
+      cout << "time elapsed: " << diff << " seconds" << endl;
+      cout << "data block received" << endl;
+      time(&start);
+      //if (blink) {
+         sleep(5);
+         cout << "blink!" << endl;
+      //}
    }
    if(bytesReceived < 0) {
       printf("\n Read Error \n");
