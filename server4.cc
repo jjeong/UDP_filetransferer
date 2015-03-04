@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <sstream>
 #define HOST_BUFFER 1025 //?
+#define BUFFER_SIZE 40
 using namespace std;
 
 
@@ -71,7 +72,7 @@ int main(int argc, char * argv[])
 
 
 	int rc = 0; // actual number of bytes read
-	char buf[256];
+	char buf[BUFFER_SIZE];
 	memset(&socketInfo, '0', sizeof(socketInfo));
     memset(buf, '0', sizeof(buf));
 
@@ -91,39 +92,50 @@ int main(int argc, char * argv[])
 	
     int connfd; //?
     int done = 0;
-    while (true) {
+    //while (true) {
+    char filename[10];
+    char numstr[2];
+
+    for (int i = 1; i <= 10; i++) {
+    	strcpy(filename, "test");
+    	sprintf(numstr,"%d",i);
+    	strcat(filename, numstr);
+    	strcat(filename, ".txt");
+
     	connfd = accept(socketHandle, (struct sockaddr *) NULL, NULL);
-    	FILE * f = fopen("test1.txt", "r"); //
+    	FILE * f = fopen(filename, "r");
     	if (f == NULL) {
     		cout << "file open error" << endl;
     		exit(1);
     	}
 
-    	cout << "ok" << endl;
+    	cout << "trying to send " << endl;
 
     	while (true) {
-    		unsigned char buffer[256] = {0};
-    		int nread = fread(buffer, 1, 256, f);
+    		unsigned char buffer[BUFFER_SIZE] = {0};
+    		int nread = fread(buffer, 1, BUFFER_SIZE, f); //256
     		cout << "Bytes read: " << nread << endl;
 
     		//send data
     		if (nread > 0) {
     			cout << "sending..." << endl;
-    			write(connfd, buffer, nread);
+
+    			//for (int t = 0; t < 5; t++) {
+    				write(connfd, buffer, nread);
+    			//}
+    			
     		}
     		// if error, or reached end of file
-    		if (nread < 256) {
+    		if (nread < BUFFER_SIZE) {
     			if (feof(f))
     				cout << "end of file" << endl;
     			if (ferror(f))
     				cout << "error reading" << endl;
-    			done = 1;
+    			//done = 1;
     			break;
     		}
 
     	}
-    	if (done)
-    		break;
 
     	close (connfd);
     	sleep(1);

@@ -84,11 +84,6 @@ int main(int argc, char * argv[]) // <addr> <port#> [-b]
    int rc = 0;  // Actual number of bytes read by function read()
    char buf[256];
 
-   //strcpy(buf,"Hello there");
-   //send(socketHandle, buf, strlen(buf)+1, 0);
-
-   
-   // create file where data is stored
    FILE * fp = fopen("received.txt", "w");
    if (fp == NULL) {
       cout << "File not received" << endl;
@@ -97,34 +92,17 @@ int main(int argc, char * argv[]) // <addr> <port#> [-b]
 
    // receive file
    int bytesReceived;
-   while ((bytesReceived = read(socketHandle, buf, 256) > 0)) { //?
-      cout << "Bytes received: " << bytesReceived << endl;
+
+   while ((bytesReceived = read(socketHandle, buf, 256) > 0)) {
       fwrite(buf, 1, bytesReceived, fp);
    }
-   if(bytesReceived < 0)
-    {
-        printf("\n Read Error \n");
-         fprintf(fp,"%s",buf);
-    }
-
-  
-
-   else {
-      cout << "Bytes received: " << bytesReceived << endl;
-   cout << "the file was received successfully" << endl;
-   cout << "the new file created is received.tx" << endl;
-}
-   
-   /*
-   // received data in 256 bytes
-   int bytesReceived;
-   while (bytesReceived == read(socketHandle, host, 256)) { //?
-      cout << "Bytes received: " << bytesReceived;
-      fwrite(host, 1, bytesReceived, fp);
+   if(bytesReceived < 0) {
+      printf("\n Read Error \n");
+      fprintf(fp,"%s",buf);
+   } else {
+      cout << "the file was received successfully" << endl;
+      cout << "the new file created is received.tx" << endl;
    }
-   */
-
-   
    
 
 }
