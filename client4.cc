@@ -37,27 +37,24 @@ int main(int argc, char * argv[]) // <addr> <port#> [-b]
       cerr << "Invalid port number: " << argv[2] << "\n";
       exit(EXIT_FAILURE);
    }
-   if ((argc == 4) && (argv[3] == "-b"))
+   if ((argc == 4) && (strcmp(argv[3], "-b") == 0))
       blink = 1;
 
-   //struct hostent *hPtr;
    int socketHandle;
    const char *remoteHost = "localhost";
-   //int portNumber = 8080;
 
-   bzero(&remoteSocketInfo, sizeof(sockaddr_in));  // Clear structure memory
+   // clear structure memory
+   bzero(&remoteSocketInfo, sizeof(sockaddr_in));
 
    // Get system information
-
-   if((hPtr = gethostbyname(remoteHost)) == NULL)
-   {
+   if((hPtr = gethostbyname(remoteHost)) == NULL) {
       cerr << "System DNS name resolution not configured properly." << endl;
       cerr << "Error number: " << ECONNREFUSED << endl;
       exit(EXIT_FAILURE);
    }
 
    // create socket
-   if((socketHandle = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+   if((socketHandle = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) < 0)
    {
       cout << "socket failed" << endl;
       close(socketHandle);
@@ -65,22 +62,29 @@ int main(int argc, char * argv[]) // <addr> <port#> [-b]
    }
 
    // Load system information into socket data structures
-
    memcpy((char *)&remoteSocketInfo.sin_addr, hPtr->h_addr, hPtr->h_length);
    remoteSocketInfo.sin_family = AF_INET;
    remoteSocketInfo.sin_port = htons((u_short)portNumber);
 
+   /*
    if(connect(socketHandle, (struct sockaddr *)&remoteSocketInfo, sizeof(sockaddr_in)) < 0)
    {
       cout << "connect failed :(" << endl;
       close(socketHandle);
       exit(EXIT_FAILURE);
    }
+   */
 
-   cout << ":)" << endl;
+   // bind
+        //ret_val = ;
+   // if (bind(socketHandle, (struct sockaddr *)&socketInfo, sizeof(struct sockaddr_in)) != 0) {
+   //    cout << "bind failure" << endl;
+   //    close(socketHandle);
+   //    return -1;
+   // }
 
 
-   int rc = 0;  // Actual number of bytes read by function read()
+   //int rc = 0;  // Actual number of bytes read by function read()
    char buf[BUFFER_SIZE];
 
    FILE * fp = fopen("received.txt", "w");
@@ -89,32 +93,36 @@ int main(int argc, char * argv[]) // <addr> <port#> [-b]
       exit(EXIT_FAILURE);
    }
 
-   // receive file
    int bytesReceived;
    time_t start, end;
    double diff;
+   int beginning = 1;
 
+   cout << "ok3" << endl;
+
+   // receive data
    time(&start);
-   while ((bytesReceived = recv(socketHandle, buf, BUFFER_SIZE, 0))) {
+   while ((bytesReceived = recv(socketHandle, buf, BUFFER_SIZE, 0)) > 0) { //error
       
-      fwrite(buf, 1, bytesReceived, fp);
+      //fwrite(buf, 1, bytesReceived, fp);
+      cout << "receiving.." << endl;
       time(&end);
       diff = difftime(end,start);
-      cout << "time elapsed: " << diff << " seconds" << endl;
-      cout << "data block received" << endl;
+      if (!beginning)
+         cout << "time elapsed: " << diff << " seconds" << endl;
+      beginning = 0;
+      cout << "data block received: " << bytesReceived << endl;
       time(&start);
-      //if (blink) {
-         sleep(5);
+      if (blink) {
+         //sleep(5);
          cout << "blink!" << endl;
-      //}
+      }
    }
    if(bytesReceived < 0) {
       printf("\n Read Error \n");
       fprintf(fp,"%s",buf);
    } else {
       cout << "the file was received successfully" << endl;
-      cout << "the new file created is received.tx" << endl;
+      cout << "the new file \"received.txt\" is created" << endl;
    }
-   
-
 }
